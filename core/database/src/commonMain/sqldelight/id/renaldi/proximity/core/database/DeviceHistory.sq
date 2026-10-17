@@ -1,0 +1,48 @@
+CREATE TABLE deviceHistory (
+    address           TEXT    NOT NULL PRIMARY KEY,
+    name              TEXT,
+    strongestRssi     INTEGER NOT NULL,
+    lastRssi          INTEGER NOT NULL,
+    firstSeenAtMillis INTEGER NOT NULL,
+    lastSeenAtMillis  INTEGER NOT NULL,
+    sightingCount     INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE INDEX deviceHistory_lastSeen ON deviceHistory(lastSeenAtMillis DESC);
+
+insertOrIgnore:
+INSERT OR IGNORE INTO deviceHistory(
+    address, name, strongestRssi, lastRssi, firstSeenAtMillis, lastSeenAtMillis, sightingCount
+)
+VALUES (?, ?, ?, ?, ?, ?, 0);
+
+accumulate:
+UPDATE deviceHistory SET
+    name              = COALESCE(:name, name),
+    strongestRssi     = MAX(strongestRssi, :strongestRssi),
+    lastRssi          = :lastRssi,
+    firstSeenAtMillis = MIN(firstSeenAtMillis, :firstSeenAtMillis),
+    lastSeenAtMillis  = MAX(lastSeenAtMillis, :lastSeenAtMillis),
+    sightingCount     = sightingCount + :packetDelta
+WHERE address = :address;
+
+selectAll:
+SELECT * FROM deviceHistory ORDER BY lastSeenAtMillis DESC;
+
+selectByAddress:
+SELECT * FROM deviceHistory WHERE address = ?;
+
+countAll:
+SELECT COUNT(*) FROM deviceHistory;
+
+deleteByAddress:
+DELETE FROM deviceHistory WHERE address = ?;
+
+deleteAll:
+DELETE FROM deviceHistory;
+
+pruneBeyond:
+DELETE FROM deviceHistory
+WHERE address NOT IN (
+    SELECT address FROM deviceHistory ORDER BY lastSeenAtMillis DESC LIMIT :keep
+);

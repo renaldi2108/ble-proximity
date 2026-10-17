@@ -1,0 +1,20 @@
+*.iml
+.gradle
+.kotlin
+/local.properties
+/.idea
+.DS_Store
+build/
+captures/
+.externalNativeBuild
+.cxx
+local.properties
+xcuserdata/
+
+# Xcode
+iosApp/iosApp.xcodeproj
+*.xcworkspace
+DerivedData/
+
+# Internal performance notes
+PERFORMANCE.md

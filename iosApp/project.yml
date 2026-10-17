@@ -1,0 +1,75 @@
+name: iosApp
+options:
+  bundleIdPrefix: id.renaldi
+  deploymentTarget:
+    iOS: "15.0"
+
+targets:
+  iosApp:
+    type: application
+    platform: iOS
+    productName: Proximity
+    sources:
+      - path: iosApp
+    info:
+      path: iosApp/Info.plist
+      properties:
+        CADisableMinimumFrameDurationOnPhone: true
+        UILaunchScreen: {}
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        CFBundleDisplayName: $(PROXIMITY_DISPLAY_NAME)
+        NSBluetoothAlwaysUsageDescription: Proximity memindai sinyal advertising perangkat Bluetooth di sekitar untuk memperkirakan jaraknya.
+    configFiles:
+      Debug: Version.xcconfig
+      Release: Version.xcconfig
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: id.renaldi.proximity
+        PRODUCT_NAME: Proximity
+        EXCLUDED_ARCHS[sdk=iphonesimulator*]: x86_64
+        FRAMEWORK_SEARCH_PATHS:
+          - $(SRCROOT)/../app/shared/build/xcode-frameworks/$(CONFIGURATION)/$(SDK_NAME)
+        OTHER_LDFLAGS:
+          - $(inherited)
+          - -framework
+          - SharedApp
+          - -lsqlite3
+      configs:
+        Debug:
+          PRODUCT_BUNDLE_IDENTIFIER: id.renaldi.proximity.debug
+          PROXIMITY_DISPLAY_NAME: Proximity Debug
+        Release:
+          PROXIMITY_DISPLAY_NAME: Proximity
+    preBuildScripts:
+      - name: Compile Kotlin Framework
+        script: |
+          cd "$SRCROOT/.."
+          ./gradlew syncIosVersion :app:shared:embedAndSignAppleFrameworkForXcode
+        basedOnDependencyAnalysis: false
+
+  iosAppUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - path: iosAppUITests
+    dependencies:
+      - target: iosApp
+    settings:
+      base:
+        TEST_TARGET_NAME: iosApp
+        PRODUCT_BUNDLE_IDENTIFIER: id.renaldi.proximity.uitests
+        GENERATE_INFOPLIST_FILE: YES
+
+schemes:
+  iosApp:
+    build:
+      targets:
+        iosApp: all
+        iosAppUITests: [test]
+    run:
+      config: Debug
+    test:
+      config: Debug
+      targets:
+        - iosAppUITests
